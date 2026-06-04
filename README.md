@@ -1,1 +1,2 @@
-# MONKEY_PYGAME
+## imagen
+![juegomono.jpg](assets/images/juegomono.jpg)

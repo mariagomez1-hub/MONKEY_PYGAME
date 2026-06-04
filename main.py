@@ -1,73 +1,75 @@
-
-import random
 import pygame
+import random
+import time
+from assets.src.clases import banana, player, puntaje, vidas
 
-from settings import *
-from src.mono import MONO
-from src.banano import BANANO
-from src.hud import VER_MARCADOR
+pygame.init()
 
-def main() -> None:
-    pygame.mixer.init()
-    pygame.init()
+lost = pygame.mixer.Sound("assets/sounds/MONO.mp3")
+coin = pygame.mixer.Sound("assets/sounds/PERDER.mp3")
+bg = pygame.image.load("assets/images/FONDO.png")
+screen = pygame.display.set_mode((1024, 700))
+blanco = (255, 255, 255)
+clock = pygame.time.Clock()
+
+# Crear instancias de las clases
+banana_obj = banana()
+player_obj = player()
+puntaje_obj = puntaje
+vidas_obj = vidas
 
 
-    screen = pygame.display.set_mode((ANCHURA, ALTURA))
-    pygame.display.set_caption('El juego del mono y el banano')
-
+while True:
+    clock.tick(60)  # 60 FPS
     
-    lista_mono = pygame.sprite.Group()
-    lista_banano = pygame.sprite.Group()
-    lista_global = pygame.sprite.Group()
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            pygame.quit()
+            exit()
 
+    screen.blit(bg, (0, 0))
     
-    sfx_perdido = pygame.mixer.Sound("assets/sounds/PERDER.wav")
-    sfx_perdido.set_volume(1.0)
-
-
-    # Pasamos los grupos correspondientes al constructor del MONO
-    mono = MONO(lista_banano, lista_global)
-    lista_global.add(mono)
-    lista_mono.add(mono)
-
-    # Creamos el primer banano al iniciar
-    banano_inicial = BANANO(lista_global)
-    lista_global.add(banano_inicial)
-    lista_banano.add(banano_inicial)
-
-    reloj = pygame.time.Clock()
-    termina = False
-    print("Empezamos...")
-
-    # --- Bucle principal ---
-    while not termina:
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                termina = True
-
-            
-
-        
-        lista_global.update()
-
-        
-        screen.fill(BLANCO)
-        lista_global.draw(screen)
-
+    # Llamar a los movimientos
+    banana_obj.move()
+    player_obj.move(None)
     
-        VER_MARCADOR(screen, mono.PUNTOS)
+    # Actualizar rect del jugador con su nueva posición x
+    player_obj.rect.x = player_obj.x
+    
+    screen.blit(banana_obj.sp_banana, (banana_obj.x, banana_obj.y))
+    screen.blit(player_obj.sp_player, (player_obj.x, player_obj.rect.y))
+    fuente = pygame.font.SysFont("comic sans ms", 35, 1, 1)
+    texto1 = fuente.render("puntos: " + str(puntaje_obj.score), 1, blanco)
+    texto2 = fuente.render("vidas: " + str(vidas_obj.lives), 1, blanco)
+    screen.blit(texto1, (50, 50))
+    screen.blit(texto2, (50, 100))
 
-        
-        if mono.TERMINA:
-            sfx_perdido.play()
-            pygame.time.wait(5000)
-            termina = True
+    if player_obj.rect.colliderect(banana_obj.rect):
+        coin.play()
+        puntaje_obj.score += 1
+        banana_obj.rect.x = random.randint(0, 750)
+        banana_obj.rect.y = random.randint(0, 0)
+        banana_obj.x = banana_obj.rect.x
+        banana_obj.y = banana_obj.rect.y
 
-        pygame.display.flip()
-        reloj.tick(FPS)
+    if player_obj.rect.colliderect(vidas_obj.rect):
+        lost.play()
+        vidas_obj.lives -= 1
+        vidas_obj.rect.x = random.randint(0, 750)
+        vidas_obj.rect.y = random.randint(0, 550)
 
-    print(f"Su marcador: {mono.PUNTOS} puntos")
-    pygame.quit()
+    if vidas_obj.lives <= 0:
+        lost.play()
+        time.sleep(7)
+        print("Game Over")
+        pygame.quit()
+        exit()
+    
+    if banana_obj.rect.y > 800:
+        banana_obj.delete()
+        banana_obj.rect.x = random.randint(0, 750)
+        banana_obj.rect.y = random.randint(0, 0)
+        banana_obj.x = banana_obj.rect.x
+        banana_obj.y = banana_obj.rect.y
 
-if __name__ == "__main__":
-    main()
+    pygame.display.flip()
